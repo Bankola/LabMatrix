@@ -1,7 +1,10 @@
 #include "pch.h"
-
 #define MEMDATA_TESTS
 #define VECTOR_TESTS
+#include <sstream>
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 #ifdef MEMDATA_TESTS
 #include "../MemData/memdata.h"
@@ -1246,5 +1249,451 @@ TEST(VectorShrink, AllowsPushingAfterShrink) {
     v.push_front(-1.0);
     EXPECT_EQ(v.get_size(), 5u);
     EXPECT_DOUBLE_EQ(v[0], -1.0);
+}
+
+//TMathVector
+
+using Vec = TMathVector<double>;
+using Veci = TMathVector<int>;
+
+TEST(TMathVector, DefaultConstructorIsEmpty) {
+    Vec v;
+    EXPECT_EQ(v.size(), 0u);
+    EXPECT_TRUE(v.is_zero());
+}
+
+TEST(TMathVector, SizeConstructorIsEmptyWithCapacity) {
+    Vec v(3);
+    EXPECT_EQ(v.size(), 0u);
+    EXPECT_GE(v.get_capacity(), 3u);
+}
+
+TEST(TMathVector, FillConstructor) {
+    Vec v(3, 2.5);
+    Vec vv;
+    vv.push_back(2.5);
+    vv.push_back(2.5);
+    vv.push_back(2.5);
+    for (size_t i = 0; i < 3; i++) EXPECT_DOUBLE_EQ(vv[i], 2.5);
+}
+
+TEST(TMathVector, InitListConstructor) {
+    Vec v{ 1.0, 2.0, 3.0 };
+    EXPECT_EQ(v.size(), 3u);
+    EXPECT_DOUBLE_EQ(v[0], 1.0);
+    EXPECT_DOUBLE_EQ(v[1], 2.0);
+    EXPECT_DOUBLE_EQ(v[2], 3.0);
+}
+
+TEST(TMathVector, CopyConstructorIsDeep) {
+    Vec a{ 1.0, 2.0, 3.0 };
+    Vec b(a);
+    EXPECT_EQ(b.size(), 3u);
+    EXPECT_DOUBLE_EQ(b[1], 2.0);
+    b[0] = 99.0;
+    EXPECT_DOUBLE_EQ(a[0], 1.0);   
+}
+
+TEST(TMathVector, MoveConstructor) {
+    Vec a{ 1.0, 2.0, 3.0 };
+    Vec b(std::move(a));
+    EXPECT_EQ(b.size(), 3u);
+    EXPECT_DOUBLE_EQ(b[1], 2.0);
+}
+
+TEST(TMathVector, CopyAssignmentIsDeep) {
+    Vec a{ 1.0, 2.0 };
+    Vec b;
+    b = a;
+    b[0] = 99.0;
+    EXPECT_DOUBLE_EQ(a[0], 1.0);
+    EXPECT_DOUBLE_EQ(b[0], 99.0);
+}
+
+TEST(TMathVector, BracketReturnsRef) {
+    Vec v{ 1.0, 2.0, 3.0 };
+    v[0] = 42.0;
+    v[0] += 1.0;
+    EXPECT_DOUBLE_EQ(v[0], 43.0);
+}
+
+TEST(TMathVector, SizeMatchesGetSize) {
+    Vec v{ 1.0, 2.0 };
+    EXPECT_EQ(v.size(), 2u);
+    EXPECT_EQ(v.get_size(), 2u);
+}
+
+TEST(TMathVector, InheritedPushBackWorks) {
+    Vec v;
+    v.push_back(1.0);
+    v.push_back(2.0);
+    EXPECT_EQ(v.size(), 2u);
+    EXPECT_DOUBLE_EQ(v[0], 1.0);
+    EXPECT_DOUBLE_EQ(v[1], 2.0);
+}
+
+TEST(TMathVector, InheritedPushFrontWorks) {
+    Vec v;
+    v.push_front(2.0);
+    v.push_front(1.0);
+    EXPECT_EQ(v.size(), 2u);
+    EXPECT_DOUBLE_EQ(v[0], 1.0);
+    EXPECT_DOUBLE_EQ(v[1], 2.0);
+}
+
+TEST(TMathVector, InheritedPopFrontWorks) {
+    Vec v{ 1.0, 2.0, 3.0 };
+    v.pop_front();
+    EXPECT_EQ(v.size(), 2u);
+    EXPECT_DOUBLE_EQ(v[0], 2.0);
+}
+
+TEST(TMathVector, InheritedPopBackWorks) {
+    Vec v{ 1.0, 2.0, 3.0 };
+    v.pop_back();
+    EXPECT_EQ(v.size(), 2u);
+    EXPECT_DOUBLE_EQ(v[1], 2.0);
+}
+
+TEST(TMathVector, InheritedIsEmpty) {
+    Vec v;
+    EXPECT_TRUE(v.is_empty());
+    v.push_back(1.0);
+    EXPECT_FALSE(v.is_empty());
+}
+
+TEST(TMathVector, CompoundAdd) {
+    Vec a{ 1.0, 2.0, 3.0 };
+    a += Vec{ 10.0, 20.0, 30.0 };
+    EXPECT_DOUBLE_EQ(a[0], 11.0);
+    EXPECT_DOUBLE_EQ(a[1], 22.0);
+    EXPECT_DOUBLE_EQ(a[2], 33.0);
+}
+
+TEST(TMathVector, CompoundSub) {
+    Vec a{ 10.0, 20.0, 30.0 };
+    a -= Vec{ 1.0, 2.0, 3.0 };
+    EXPECT_DOUBLE_EQ(a[0], 9.0);
+    EXPECT_DOUBLE_EQ(a[2], 27.0);
+}
+
+TEST(TMathVector, CompoundMul) {
+    Vec a{ 1.0, 2.0, 3.0 };
+    a *= 2.0;
+    EXPECT_DOUBLE_EQ(a[0], 2.0);
+    EXPECT_DOUBLE_EQ(a[2], 6.0);
+}
+
+TEST(TMathVector, CompoundDiv) {
+    Vec a{ 2.0, 4.0, 6.0 };
+    a /= 2.0;
+    EXPECT_DOUBLE_EQ(a[0], 1.0);
+    EXPECT_DOUBLE_EQ(a[2], 3.0);
+}
+
+TEST(TMathVector, CompoundDivByZeroThrows) {
+    Vec a{ 1.0, 2.0 };
+    EXPECT_THROW(a /= 0.0, std::domain_error);
+}
+
+TEST(TMathVector, Add) {
+    Vec a{ 1.0, 2.0 }, b{ 3.0, 4.0 };
+    Vec c = a + b;
+    EXPECT_DOUBLE_EQ(c[0], 4.0);
+    EXPECT_DOUBLE_EQ(c[1], 6.0);
+}
+
+TEST(TMathVector, Sub) {
+    Vec a{ 3.0, 4.0 }, b{ 1.0, 2.0 };
+    Vec c = a - b;
+    EXPECT_DOUBLE_EQ(c[0], 2.0);
+    EXPECT_DOUBLE_EQ(c[1], 2.0);
+}
+
+TEST(TMathVector, UnaryMinus) {
+    Vec a{ 1.0, -2.0, 3.0 };
+    Vec b = -a;
+    EXPECT_DOUBLE_EQ(b[0], -1.0);
+    EXPECT_DOUBLE_EQ(b[1], 2.0);
+    EXPECT_DOUBLE_EQ(b[2], -3.0);
+}
+
+TEST(TMathVector, ScalarMulRight) {
+    Vec a{ 1.0, 2.0 };
+    Vec b = a * 3.0;
+    EXPECT_DOUBLE_EQ(b[0], 3.0);
+    EXPECT_DOUBLE_EQ(b[1], 6.0);
+}
+
+TEST(TMathVector, ScalarMulLeft) {
+    Vec a{ 1.0, 2.0 };
+    Vec b = 3.0 * a;
+    EXPECT_DOUBLE_EQ(b[0], 3.0);
+    EXPECT_DOUBLE_EQ(b[1], 6.0);
+}
+
+TEST(TMathVector, ScalarDiv) {
+    Vec a{ 2.0, 6.0 };
+    Vec b = a / 2.0;
+    EXPECT_DOUBLE_EQ(b[0], 1.0);
+    EXPECT_DOUBLE_EQ(b[1], 3.0);
+}
+
+TEST(TMathVector, ScalarDivByZeroThrows) {
+    Vec a{ 1.0, 2.0 };
+    EXPECT_THROW(a / 0.0, std::domain_error);
+}
+
+TEST(TMathVector, AddSizeMismatchThrows) {
+    Vec a{ 1.0, 2.0 }, b{ 1.0, 2.0, 3.0 };
+    EXPECT_THROW(a + b, std::invalid_argument);
+}
+
+TEST(TMathVector, SubSizeMismatchThrows) {
+    Vec a{ 1.0, 2.0 }, b{ 1.0, 2.0, 3.0 };
+    EXPECT_THROW(a - b, std::invalid_argument);
+}
+
+TEST(TMathVector, CompoundAddSizeMismatchThrows) {
+    Vec a{ 1.0, 2.0 }, b{ 1.0, 2.0, 3.0 };
+    EXPECT_THROW(a += b, std::invalid_argument);
+}
+
+TEST(TMathVector, CompoundSubSizeMismatchThrows) {
+    Vec a{ 1.0, 2.0 }, b{ 1.0, 2.0, 3.0 };
+    EXPECT_THROW(a -= b, std::invalid_argument);
+}
+
+TEST(TMathVector, Dot) {
+    Vec a{ 1.0, 2.0, 3.0 }, b{ 4.0, 5.0, 6.0 };
+    EXPECT_DOUBLE_EQ(a.dot(b), 32.0);
+}
+
+TEST(TMathVector, DotSizeMismatchThrows) {
+    Vec a{ 1.0, 2.0 }, b{ 1.0, 2.0, 3.0 };
+    EXPECT_THROW(a.dot(b), std::invalid_argument);
+}
+
+TEST(TMathVector, DotWithSelfEqualsNormSquared) {
+    Vec a{ 3.0, 4.0 };
+    EXPECT_DOUBLE_EQ(a.dot(a), a.norm_squared());
+}
+
+TEST(TMathVector, NormSquared) {
+    Vec a{ 3.0, 4.0 };
+    EXPECT_DOUBLE_EQ(a.norm_squared(), 25.0);
+}
+
+TEST(TMathVector, Norm) {
+    Vec a{ 3.0, 4.0 };
+    EXPECT_DOUBLE_EQ(a.norm(), 5.0);
+}
+
+TEST(TMathVector, NormOf3D) {
+    Vec a{ 1.0, 2.0, 2.0 };
+    EXPECT_DOUBLE_EQ(a.norm(), 3.0);
+}
+
+TEST(TMathVector, NormOfZeroIsZero) {
+    Vec a(3);
+    EXPECT_DOUBLE_EQ(a.norm(), 0.0);
+}
+
+TEST(TMathVector, NormalizedSimple) {
+    Vec a{ 3.0, 0.0, 0.0 };
+    auto n = a.normalized();
+    EXPECT_DOUBLE_EQ(n[0], 1.0);
+    EXPECT_DOUBLE_EQ(n[1], 0.0);
+    EXPECT_DOUBLE_EQ(n[2], 0.0);
+}
+
+TEST(TMathVector, NormalizedHasUnitNorm) {
+    Vec a{ 1.0, 2.0, 3.0 };
+    auto n = a.normalized();
+    EXPECT_NEAR(n.norm(), 1.0, 1e-12);
+}
+
+TEST(TMathVector, NormalizedPreservesDirection) {
+    Vec a{ 3.0, 4.0 };
+    auto n = a.normalized();
+    EXPECT_NEAR(a.dot(n), a.norm(), 1e-12);
+}
+
+TEST(TMathVector, NormalizeZeroThrows) {
+    Vec a{ 0.0, 0.0, 0.0 };
+    EXPECT_THROW(a.normalized(), std::domain_error);
+}
+
+TEST(TMathVector, AngleOrthogonal) {
+    Vec a{ 1.0, 0.0, 0.0 }, b{ 0.0, 1.0, 0.0 };
+    EXPECT_NEAR(a.angle(b), M_PI / 2.0, 1e-12);
+}
+
+TEST(TMathVector, AngleParallel) {
+    Vec a{ 1.0, 0.0, 0.0 }, b{ 5.0, 0.0, 0.0 };
+    EXPECT_NEAR(a.angle(b), 0.0, 1e-12);
+}
+
+TEST(TMathVector, AngleOpposite) {
+    Vec a{ 1.0, 0.0, 0.0 }, b{ -1.0, 0.0, 0.0 };
+    EXPECT_NEAR(a.angle(b), M_PI, 1e-12);
+}
+
+TEST(TMathVector, AngleIsSymmetric) {
+    Vec a{ 1.0, 2.0, 3.0 }, b{ 4.0, 5.0, 6.0 };
+    EXPECT_NEAR(a.angle(b), b.angle(a), 1e-12);
+}
+
+TEST(TMathVector, AngleWithZeroThrows) {
+    Vec a{ 1.0, 0.0, 0.0 }, b{ 0.0, 0.0, 0.0 };
+    EXPECT_THROW(a.angle(b), std::domain_error);
+}
+
+TEST(TMathVector, CrossIJisK) {
+    Vec i{ 1.0, 0.0, 0.0 }, j{ 0.0, 1.0, 0.0 };
+    Vec k = i.cross(j);
+    EXPECT_DOUBLE_EQ(k[0], 0.0);
+    EXPECT_DOUBLE_EQ(k[1], 0.0);
+    EXPECT_DOUBLE_EQ(k[2], 1.0);
+}
+
+TEST(TMathVector, CrossJIisMinusK) {
+    Vec i{ 1.0, 0.0, 0.0 }, j{ 0.0, 1.0, 0.0 };
+    Vec k = j.cross(i);
+    EXPECT_DOUBLE_EQ(k[2], -1.0);
+}
+
+TEST(TMathVector, CrossAntiCommutative) {
+    Vec a{ 1.0, 2.0, 3.0 }, b{ 4.0, 5.0, 6.0 };
+    Vec ab = a.cross(b);
+    Vec ba = b.cross(a);
+    EXPECT_DOUBLE_EQ(ab[0], -ba[0]);
+    EXPECT_DOUBLE_EQ(ab[1], -ba[1]);
+    EXPECT_DOUBLE_EQ(ab[2], -ba[2]);
+}
+
+TEST(TMathVector, CrossOrthogonalToBoth) {
+    Vec a{ 1.0, 2.0, 3.0 }, b{ 4.0, 5.0, 6.0 };
+    Vec c = a.cross(b);
+    EXPECT_NEAR(a.dot(c), 0.0, 1e-12);
+    EXPECT_NEAR(b.dot(c), 0.0, 1e-12);
+}
+
+TEST(TMathVector, CrossOfParallelIsZero) {
+    Vec a{ 1.0, 2.0, 3.0 }, b{ 2.0, 4.0, 6.0 };   // b = 2*a
+    Vec c = a.cross(b);
+    EXPECT_TRUE(c.is_zero());
+}
+
+TEST(TMathVector, CrossWrongSizeThrows) {
+    Vec a{ 1.0, 2.0 }, b{ 3.0, 4.0 };
+    EXPECT_THROW(a.cross(b), std::invalid_argument);
+}
+
+TEST(TMathVector, CrossNon3DThrows) {
+    Vec a{ 1.0, 2.0, 3.0, 4.0 }, b{ 5.0, 6.0, 7.0, 8.0 };
+    EXPECT_THROW(a.cross(b), std::invalid_argument);
+}
+
+TEST(TMathVector, IsZeroTrue) {
+    Vec v(3);
+    EXPECT_TRUE(v.is_zero());
+}
+
+TEST(TMathVector, IsZeroFalse) {
+    Vec v{ 0.0, 1.0, 0.0 };
+    EXPECT_FALSE(v.is_zero());
+}
+
+TEST(TMathVector, IsZeroEmptyIsTrue) {
+    Vec v;
+    EXPECT_TRUE(v.is_zero());
+}
+
+TEST(TMathVector, BasisE1) {
+    Vec e1 = Vec::basis(3, 0);
+    EXPECT_EQ(e1.size(), 3u);
+    EXPECT_DOUBLE_EQ(e1[0], 1.0);
+    EXPECT_DOUBLE_EQ(e1[1], 0.0);
+    EXPECT_DOUBLE_EQ(e1[2], 0.0);
+}
+
+TEST(TMathVector, BasisE2) {
+    Vec e2 = Vec::basis(3, 1);
+    EXPECT_DOUBLE_EQ(e2[0], 0.0);
+    EXPECT_DOUBLE_EQ(e2[1], 1.0);
+    EXPECT_DOUBLE_EQ(e2[2], 0.0);
+}
+
+TEST(TMathVector, BasisE3) {
+    Vec e3 = Vec::basis(3, 2);
+    EXPECT_DOUBLE_EQ(e3[0], 0.0);
+    EXPECT_DOUBLE_EQ(e3[1], 0.0);
+    EXPECT_DOUBLE_EQ(e3[2], 1.0);
+}
+
+TEST(TMathVector, BasisIsUnit) {
+    Vec e = Vec::basis(5, 3);
+    EXPECT_DOUBLE_EQ(e.norm(), 1.0);
+}
+
+TEST(TMathVector, BasisOutOfRangeThrows) {
+    EXPECT_THROW(Vec::basis(3, 5), std::out_of_range);
+}
+
+TEST(TMathVector, OutputFormat) {
+    Vec v{ 1.0, 2.0, 3.0 };
+    std::ostringstream oss;
+    oss << v;
+    EXPECT_EQ(oss.str(), "(1, 2, 3)");
+}
+
+TEST(TMathVector, OutputEmpty) {
+    Vec v;
+    std::ostringstream oss;
+    oss << v;
+    EXPECT_EQ(oss.str(), "()");
+}
+
+TEST(TMathVector, OutputSingle) {
+    Vec v{ 5.0 };
+    std::ostringstream oss;
+    oss << v;
+    EXPECT_EQ(oss.str(), "(5)");
+}
+
+TEST(TMathVector, IntAdd) {
+    Veci a{ 1, 2, 3 }, b{ 4, 5, 6 };
+    Veci c = a + b;
+    EXPECT_EQ(c[0], 5);
+    EXPECT_EQ(c[1], 7);
+    EXPECT_EQ(c[2], 9);
+}
+
+TEST(TMathVector, IntDot) {
+    Veci a{ 1, 2, 3 }, b{ 4, 5, 6 };
+    EXPECT_EQ(a.dot(b), 32);
+}
+
+TEST(TMathVector, IntScalarMul) {
+    Veci a{ 1, 2, 3 };
+    Veci b = a * 2;
+    EXPECT_EQ(b[0], 2);
+    EXPECT_EQ(b[2], 6);
+}
+
+TEST(TMathVector, IntBasis) {
+    Veci e = Veci::basis(3, 2);
+    EXPECT_EQ(e[0], 0);
+    EXPECT_EQ(e[1], 0);
+    EXPECT_EQ(e[2], 1);
+}
+
+TEST(TMathVector, IntCross) {
+    Veci i{ 1, 0, 0 }, j{ 0, 1, 0 };
+    Veci k = i.cross(j);
+    EXPECT_EQ(k[0], 0);
+    EXPECT_EQ(k[1], 0);
+    EXPECT_EQ(k[2], 1);
 }
 #endif

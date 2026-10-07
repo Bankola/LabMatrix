@@ -231,3 +231,7 @@ void quick_sort_recursive(vector_type* data, int left, int right) {
 template class MemData<double>;
 template void quick_sort(MemData<double>&);
 template void shuffle(MemData<double>&);
+
+template class MemData<int>;
+template void quick_sort(MemData<int>&);
+template void shuffle(MemData<int>&);

@@ -344,3 +344,8 @@ template std::ostream& operator<< (std::ostream& out, const Vector<double>& v1);
 template std::istream& operator>> (std::istream& in, Vector<double>& v1);
 template void shuffle(Vector<double>&);
 template void quick_sort(Vector<double>&);
+template class Vector<int>;
+template std::ostream& operator<<(std::ostream& out, const Vector<int>& v1);
+template std::istream& operator>>(std::istream& in, Vector<int>& v1);
+template void shuffle(Vector<int>&);
+template void quick_sort(Vector<int>&);
