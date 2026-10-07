@@ -90,6 +90,7 @@ public:
     void pop_back_many(size_t);						// нескольких из конца
     void erase(size_t);                             // 1 элемента по позиции
     void erase_many(size_t, size_t);				// нескольких по позиции
+	void shrink_to_fit();
 
 	//перегрузки операторов
     Vector<vector_type>& operator=(const Vector<vector_type>&) noexcept;      // присваивания

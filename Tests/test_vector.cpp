@@ -5,6 +5,8 @@
 
 #ifdef MEMDATA_TESTS
 #include "../MemData/memdata.h"
+#include "../Vector/mathvector.h"
+#include "../Vector/matrix.h"
 
 TEST(FunctionsForMemData, can_calculate_capacity) {
     int size1 = 16;
@@ -1153,4 +1155,96 @@ TEST(ClassVector, can_move_assigment) {
     }
 }
 
+//shrink_to_fit
+TEST(MemDataShrink, ReducesCapacityToExactSize) {
+    MemData<double> md{ 1.0, 2.0, 3.0 };
+    ASSERT_EQ(md.get_size(), 3u);
+    ASSERT_EQ(md.get_capacity(), 15u);         
+    md.shrink_to_fit(3, 0);
+    EXPECT_EQ(md.get_capacity(), 3u);           
+    EXPECT_EQ(md.get_size(), 3u);
+    EXPECT_DOUBLE_EQ(md.get_data_const()[0], 1.0);
+    EXPECT_DOUBLE_EQ(md.get_data_const()[1], 2.0);
+    EXPECT_DOUBLE_EQ(md.get_data_const()[2], 3.0);
+}
+
+TEST(MemDataShrink, NoOpWhenSizeEqualsCapacity) {
+    MemData<double> md(5);
+    size_t cap = md.get_capacity();
+    md.shrink_to_fit(cap, 0);
+    EXPECT_EQ(md.get_capacity(), cap);
+}
+
+TEST(MemDataShrink, NoOpWhenSizeGreaterThanCapacity) {
+    MemData<double> md(5);
+    size_t cap = md.get_capacity();
+    md.shrink_to_fit(cap + 100, 0);
+    EXPECT_EQ(md.get_capacity(), cap);
+}
+
+TEST(MemDataShrink, ToZero) {
+    MemData<double> md{ 1.0, 2.0 };
+    md.shrink_to_fit(0, 0);
+    EXPECT_EQ(md.get_size(), 0u);
+    EXPECT_EQ(md.get_capacity(), 0u);
+}
+
+TEST(VectorShrink, ReducesCapacityToSize) {
+    Vector<double> v;
+    for (int i = 0; i < 3; i++) v.push_back(i + 1.0);
+    ASSERT_GT(v.get_capacity(), v.get_size());
+    v.shrink_to_fit();
+    EXPECT_EQ(v.get_capacity(), v.get_size());
+    EXPECT_EQ(v.get_size(), 3u);
+    EXPECT_DOUBLE_EQ(v[0], 1.0);
+    EXPECT_DOUBLE_EQ(v[1], 2.0);
+    EXPECT_DOUBLE_EQ(v[2], 3.0);
+}
+
+TEST(VectorShrink, OnEmptyVector) {
+    Vector<double> v;
+    v.shrink_to_fit();
+    EXPECT_EQ(v.get_capacity(), 0u);
+    EXPECT_EQ(v.get_size(), 0u);
+}
+
+TEST(VectorShrink, NoOpWhenSizeEqualsCapacityAfterShrink) {
+    Vector<double> v;
+    for (int i = 0; i < 15; i++) v.push_back(i + 1.0);
+    v.shrink_to_fit();                       
+    size_t cap = v.get_capacity();
+    ASSERT_EQ(cap, v.get_size());           
+    v.shrink_to_fit();                        
+    EXPECT_EQ(v.get_capacity(), cap);
+    EXPECT_EQ(v.get_size(), 15u);
+}
+
+TEST(VectorShrink, WithRingOffsetPreservesOrder) {
+    Vector<double> v;
+    for (int i = 0; i < 10; i++) v.push_back(i + 1.0);
+    for (int i = 0; i < 5; i++) v.pop_front();
+    ASSERT_GT(v.get_capacity(), v.get_size());
+    v.shrink_to_fit();
+    EXPECT_EQ(v.get_capacity(), v.get_size());
+    EXPECT_EQ(v.get_size(), 5u);
+    EXPECT_DOUBLE_EQ(v[0], 6.0);
+    EXPECT_DOUBLE_EQ(v[1], 7.0);
+    EXPECT_DOUBLE_EQ(v[2], 8.0);
+    EXPECT_DOUBLE_EQ(v[3], 9.0);
+    EXPECT_DOUBLE_EQ(v[4], 10.0);
+}
+
+TEST(VectorShrink, AllowsPushingAfterShrink) {
+    Vector<double> v;
+    v.push_back(1.0);
+    v.push_back(2.0);
+    v.push_front(0.0);
+    v.shrink_to_fit();
+    v.push_back(3.0);
+    EXPECT_EQ(v.get_size(), 4u);
+    EXPECT_DOUBLE_EQ(v[3], 3.0);
+    v.push_front(-1.0);
+    EXPECT_EQ(v.get_size(), 5u);
+    EXPECT_DOUBLE_EQ(v[0], -1.0);
+}
 #endif

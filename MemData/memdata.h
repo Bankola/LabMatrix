@@ -49,7 +49,8 @@ public:
     //сеттеры памяти и размера заполненной части
     void set_memory(size_t) noexcept;                           // установка памяти без сохранения данных
     void reset_memory(size_t size, size_t start_index = 0);     // перевыделение памяти с сохранением данных (УБРАН NOEXCEPT)
-    void clear_memory() noexcept;                               // очистка памяти
+    void clear_memory() noexcept; // очистка памяти
+    void shrink_to_fit(size_t size, size_t start_index = 0);   
     inline void set_size(size_t size) {                         //установка размера заполненной части
         if (size > _capacity) {
             throw std::invalid_argument("ERROR: Size is bigger than capacity!");

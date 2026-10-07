@@ -110,6 +110,27 @@ void MemData<vector_type>::clear_memory() noexcept {						//очистка памяти
 	set_memory(0);
 }
 
+template <typename vector_type>
+void MemData<vector_type>::shrink_to_fit(size_t size, size_t start_index) {
+	if (size >= _capacity) return;          // нечего ужимать
+	if (size == 0) {
+		delete[] _data;
+		_data = new vector_type[0];
+		_size = 0;
+		_capacity = 0;
+		return;
+	}
+	vector_type* temp = new vector_type[size];
+	size_t copy_size = (_size < size) ? _size : size;
+	for (size_t i = 0; i < copy_size; i++) {
+		temp[i] = _data[(i + start_index) % _capacity];
+	}
+	delete[] _data;
+	_data = temp;
+	_size = copy_size;
+	_capacity = size;
+}
+
 //операторы
 template <typename vector_type>
 MemData<vector_type>& MemData<vector_type>::operator=(const MemData& other) noexcept {	//присваивания

@@ -264,6 +264,14 @@ void Vector<vector_type>::erase_many(size_t i, size_t count) {
 	}
 }
 
+template<typename vector_type>
+void Vector<vector_type>::shrink_to_fit() {
+	if (_mem._size == _mem._capacity) return;
+	_mem.shrink_to_fit(_mem._size, _front);
+	_front = 0;
+	_back = (_mem._size == 0) ? 0 : _mem._size - 1;
+}
+
 //перегрузки операторов
 template<typename vector_type>
 Vector<vector_type>& Vector<vector_type>::operator=(const Vector<vector_type>& other) noexcept {
